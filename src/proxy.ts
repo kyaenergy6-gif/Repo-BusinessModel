@@ -1,7 +1,7 @@
 import { createServerClient } from '@supabase/ssr'
 import { NextResponse, type NextRequest } from 'next/server'
 
-export async function middleware(request: NextRequest) { // Nom changé ici
+export async function proxy(request: NextRequest) {
     let supabaseResponse = NextResponse.next({ request })
 
     const supabase = createServerClient(
@@ -27,14 +27,14 @@ export async function middleware(request: NextRequest) { // Nom changé ici
 
     const { data: { user } } = await supabase.auth.getUser()
 
-    // 1. Redirection si non connecté
+    // Si pas connecté et pas sur la page login → rediriger vers login
     if (!user && !request.nextUrl.pathname.startsWith('/login')) {
         const url = request.nextUrl.clone()
         url.pathname = '/login'
         return NextResponse.redirect(url)
     }
 
-    // 2. Redirection si déjà connecté
+    // Si connecté et sur la page login → rediriger vers accueil
     if (user && request.nextUrl.pathname.startsWith('/login')) {
         const url = request.nextUrl.clone()
         url.pathname = '/'
@@ -45,6 +45,5 @@ export async function middleware(request: NextRequest) { // Nom changé ici
 }
 
 export const config = {
-    // Ajout d'exclusions pour les assets courants pour éviter les ralentissements
-    matcher: ['/((?!_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)'],
+    matcher: ['/((?!_next/static|_next/image|favicon.ico).*)'],
 }
